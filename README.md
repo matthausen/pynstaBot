@@ -12,6 +12,16 @@ Keep the profile relevant unfollowing profiles which are not influent
 ### Instructions
 
 Clone the repository:
-```git clone 
+```git clone https://github.com/matthausen/pynstaBot.git ```
+
+Cd into the repo:
+```cd /path/to/pynstagram/ ```
+
+Run the scripts to follow, like pictures and unfollow irrelevant profiles:
+```python3 pynstaBot.py```
+```python3 pynstaBotFollower.py```
+```python3 pynstaBotUnfollower.py```
+
+### Don't waste time on Instagram, script it instead!
 
 
