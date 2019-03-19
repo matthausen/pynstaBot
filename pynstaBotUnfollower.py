@@ -73,8 +73,11 @@ if __name__ == '__main__':
 
     # loop through unreciprocated users and unfollow w/ random delay
     for _ in list(unreciprocated)[:min(len(unreciprocated), args.num_unfollows)]:
-        ig.getUsernameInfo(str(_))
-        print('  - unfollowing user {}'.format(ig.LastJson['user']['username']))
-        ig.unfollow(str(_))
-        time.sleep(random.randint(1, 2.5))
+        try:
+            ig.getUsernameInfo(str(_))
+            print('  - unfollowing user {}'.format(ig.LastJson['user']['username']))
+            ig.unfollow(str(_))
+        except Exception:
+            time.sleep(60) 
+
 time.sleep(random.uniform(1, args.max_delay))
