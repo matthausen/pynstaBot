@@ -1,77 +1,80 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
+from InstagramAPI import InstagramAPI
 import time
 import random
+import argparse
 import sys
 
-class pynstaBot:
+def GetAllFollowing(bot, user_id):
+    following = []
+    next_max_id = True
+    while next_max_id:
+        if next_max_id is True:
+            next_max_id = ''
+        _ = bot.getUserFollowings(user_id, maxid=next_max_id)
+        following.extend(bot.LastJson.get('users', []))
+        next_max_id = bot.LastJson.get('next_max_id', '')
+    following = set([_['pk'] for _ in following])
+    return following
 
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-        self.driver = webdriver.Firefox()
+def GetAllFollowers(bot, user_id):
+    followers = []
+    next_max_id = True
+    while next_max_id:
+        if next_max_id is True:
+            next_max_id = ''
+        _ = bot.getUserFollowers(user_id, maxid=next_max_id)
+        followers.extend(bot.LastJson.get('users', []))
+        next_max_id = bot.LastJson.get('next_max_id', '')
+    followers = set([_['pk'] for _ in followers])
+    return followers
 
-    def closeBrowser(self):
-        self.driver.close()
+if __name__ == '__main__':
 
-    def login(self):
-        driver = self.driver
-        driver.get("https://www.instagram.com/")
-        time.sleep(2)
-        login_button = driver.find_element_by_xpath("//a[@href='/accounts/login/?source=auth_switcher']")
-        login_button.click()
-        time.sleep(2)
-        user_name_elem = driver.find_element_by_xpath("//input[@name='username']")
-        user_name_elem.clear()
-        user_name_elem.send_keys(self.username)
-        passworword_elem = driver.find_element_by_xpath("//input[@name='password']")
-        passworword_elem.clear()
-        passworword_elem.send_keys(self.password)
-        passworword_elem.send_keys(Keys.RETURN)
-        time.sleep(2)
+    # parse cmd line args
+    parser = argparse.ArgumentParser(description='Unfollow instagram users that don\'t follow you back!.')
+    parser.add_argument('username', help='your instagram username')
+    parser.add_argument('password', help='your instagram password')
 
-    def unfollow(self):
-        
-        driver = self.driver
-        driver.get("https://www.instagram.com/hello_lingua/")
-        time.sleep(2)
+    parser.add_argument('-n', '--num_unfollows', type=int, default=50,
+                        help='Max number of users to unfollow in session')
+    parser.add_argument('-d', '--max_delay', type=int, default=5,
+                        help='Max seconds to wait between unfollow calls')
 
-        driver.find_element_by_xpath("//a[contains(., 'following')]").click()
-        time.sleep(2)
-        following_list = driver.find_elements_by_class_name("FPmhX")
-        for following in following_list:
-            try:
-                following.click()
-                time.sleep(2)
-                following_followers = driver.find_elements_by_class_name("g47SY")[1]
-                x = following_followers.get_attribute("title")
-                y = int(x)
-                if y > 1000:
-                    print("keep follower")
-                else:
-                    print("unfollow")
+    args = parser.parse_args()
 
-                    #To continue
 
-            except Exception as e:
-                time.sleep(2)
-                
-        
-        
+    # get credentials, authenticate
+    ig = InstagramAPI(args.username, args.password)
 
-if __name__ == "__main__":
+    # success is just a bool
+    success = ig.login()
+    if not success:
+        print('INSTAGRAM LOGIN FAILED!')
+        sys.exit()
 
-    username = "youremail"
-    password = "yourpassword"
+    # fetch your own primary key
+    ig.getSelfUsernameInfo()
+    self_id = ig.LastJson['user']['pk']
 
-    ig = pynstaBot(username, password)
-    ig.login()
+    # loop through json for followers/following
+    followers = GetAllFollowers(ig, self_id)
+    following = GetAllFollowing(ig, self_id)
+    print('- following {} users'.format(len(following)))
+    print('- followed by {} users'.format(len(followers)))
 
-    while True:
-        try:
-            ig.unfollow()
-        except Exception:
-            ig.closeBrowser()
-            time.sleep(60)
-            ig = pynstaBot(username, password)
-ig.login()
+    # they don't reciprocate
+    unreciprocated = following - followers
+
+    # i don't reciprocate
+    free_followers = followers - following
+
+    print('- following {} users that dont follow back'.format(len(unreciprocated)))
+    print('- you have {} followers that you dont follow back\n'.format(len(free_followers)))
+
+    # loop through unreciprocated users and unfollow w/ random delay
+    for _ in list(unreciprocated)[:min(len(unreciprocated), args.num_unfollows)]:
+        ig.getUsernameInfo(str(_))
+        print('  - unfollowing user {}'.format(ig.LastJson['user']['username']))
+        ig.unfollow(str(_))
+        time.sleep(random.randint(1, 2.5))
+time.sleep(random.uniform(1, args.max_delay))
