@@ -8,6 +8,9 @@ Keep the profile relevant unfollowing profiles which are not influent
 - selenium
  ``` pip3 install selenium ```
  - Firefox
+ - Unofficial instagram API:
+   ```git clone https://github.com/LevPasha/Instagram-API-python.git```
+   ```pip3 install InstagramApi``
  
 ### Instructions
 
@@ -19,8 +22,10 @@ Cd into the repo:
 
 Run the scripts to follow, like pictures and unfollow irrelevant profiles:
 ```python3 pynstaBot.py```
+
 ```python3 pynstaBotFollower.py```
-```python3 pynstaBotUnfollower.py```
+
+```python pynstaBotUnfollower.py 'your_username' 'your_password' -n 50 -d 10```
 
 ### Don't waste time on Instagram, script it instead!
 
